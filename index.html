@@ -76,7 +76,7 @@
     text-shadow: 0 2px 24px rgba(217, 160, 91, .35);
   }
   .subtitle {
-    margin-top: 14px; font-size: 15px; letter-spacing: .35em; text-indent: .35em;
+    margin-top: 14px; font-size: 17px; letter-spacing: .35em; text-indent: .35em;
     color: var(--rose);
   }
   .divider {
@@ -172,29 +172,61 @@
   .play-btn svg { width: 30px; height: 30px; margin-left: 4px; fill: var(--cream); }
   .playing .play-btn { opacity: 0; pointer-events: none; transform: scale(.7); }
 
+  /* ---- 歌词 ---- */
+  .lyrics {
+    z-index: 6; margin-top: 3vh;
+    width: min(86vw, 420px); height: 24vh;
+    overflow-y: auto; text-align: center;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+    mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+  }
+  .lyrics::-webkit-scrollbar { display: none; }
+  .lyric-line {
+    padding: 7px 12px; font-size: 14px; letter-spacing: .12em;
+    color: rgba(245, 234, 214, .32); cursor: pointer;
+    transition: color .4s ease, font-size .4s ease, text-shadow .4s ease;
+  }
+  .lyric-line.passed { color: rgba(245, 234, 214, .55); }
+  .lyric-line.active {
+    color: var(--amber); font-size: 16.5px;
+    text-shadow: 0 0 18px rgba(217, 160, 91, .55);
+  }
+
+  .progress { cursor: pointer; position: relative; height: 18px; margin-top: 12px; touch-action: none; }
+  .progress i {
+    position: absolute; left: 0; top: 8px; height: 2px; z-index: 1;
+    border-radius: 2px;
+  }
+  .progress::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 2px;
+    background: rgba(245, 234, 214, .15); border-radius: 2px;
+  }
+
   /* ---- 底部 ---- */
   footer {
-    z-index: 6; margin-top: 5vh; text-align: center; padding: 0 24px;
+    z-index: 6; margin-top: 4vh; text-align: center; padding: 0 24px;
   }
   .message {
     font-size: 15px; letter-spacing: .28em; text-indent: .28em;
     color: var(--cream); opacity: .8;
   }
   .progress {
-    width: min(60vw, 260px); height: 2px; margin: 20px auto 0;
-    background: rgba(245, 234, 214, .15); border-radius: 2px; overflow: hidden;
+    width: min(60vw, 260px); margin-left: auto; margin-right: auto;
   }
   .progress i {
-    display: block; height: 100%; width: 0%;
+    display: block; width: 0%;
     background: linear-gradient(90deg, var(--rose), var(--amber));
     transition: width .3s linear;
   }
   .time { margin-top: 10px; font-size: 11px; letter-spacing: .2em; color: var(--sepia); font-variant-numeric: tabular-nums; }
 
-  @media (max-height: 640px) {
+  @media (max-height: 700px) {
     header { margin-bottom: 2vh; }
-    h1 { font-size: 30px; }
-    footer { margin-top: 3vh; }
+    h1 { font-size: 28px; }
+    .player { width: min(56vw, 240px); }
+    footer { margin-top: 2.5vh; }
+    .lyrics { height: 18vh; margin-top: 1.5vh; }
   }
 </style>
 </head>
@@ -208,7 +240,7 @@
 <header>
   <div class="over-title">A Song For You</div>
   <h1>夜的回响</h1>
-  <div class="subtitle">生日快乐</div>
+  <div class="subtitle">墨墨生日快乐</div>
   <div class="divider"></div>
 </header>
 
@@ -232,6 +264,8 @@
   <div class="time" id="time">00:00 / 03:05</div>
 </footer>
 
+<div class="lyrics" id="lyrics"></div>
+
 <audio id="audio" src="song.m4a" preload="auto"></audio>
 
 <script>
@@ -240,11 +274,73 @@
   const btn    = document.getElementById('playBtn');
   const bar    = document.getElementById('bar');
   const timeEl = document.getElementById('time');
+  const lyricsEl = document.getElementById('lyrics');
+
+  // 估算时间轴（秒）—— 点击任意歌词可跳到对应位置
+  const LYRICS = [
+    [12,  '夜一深 世界打烊'],
+    [21,  '有些声音 就越亮'],
+    [29,  '它总是 轻轻一句'],
+    [38,  '就把失眠的人 拉上岸'],
+    [46,  '你总把别人的夜 唱亮'],
+    [54,  '却把自己晾在一旁'],
+    [62,  '现在换我 做你夜里的回响'],
+    [70,  '废话 越聊 越清醒'],
+    [78,  '心事 越说 越平静'],
+    [85,  '从深夜 到 黎明'],
+    [93,  '隔着再远 也像身边那么近'],
+    [100, '你总把别人的夜 唱亮'],
+    [108, '却把自己晾在一旁'],
+    [116, '现在换我 做你夜里的回响'],
+    [124, '世界上 有那么多夜'],
+    [134, '我偏爱 有你的那些'],
+    [144, '你总把别人的夜 唱亮'],
+    [152, '却把自己晾在一旁'],
+    [160, '现在换我 做你夜里的回响'],
+    [170, '从此 你的夜'],
+    [178, '夜夜 都有回响'],
+  ];
+
+  const lineEls = LYRICS.map(([t, text]) => {
+    const div = document.createElement('div');
+    div.className = 'lyric-line';
+    div.textContent = text;
+    div.addEventListener('click', () => {
+      audio.currentTime = t;
+      audio.play().then(() => player.classList.add('playing')).catch(() => {});
+    });
+    lyricsEl.appendChild(div);
+    return div;
+  });
+
+  let manualScrollUntil = 0;
+  ['touchstart', 'wheel'].forEach(ev =>
+    lyricsEl.addEventListener(ev, () => { manualScrollUntil = Date.now() + 4000; }, { passive: true })
+  );
 
   function fmt(s) {
     if (!isFinite(s)) return '00:00';
     const m = Math.floor(s / 60), sec = Math.floor(s % 60);
     return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+
+  function syncLyrics() {
+    const now = audio.currentTime;
+    let idx = -1;
+    for (let i = 0; i < LYRICS.length; i++) {
+      if (LYRICS[i][0] <= now) idx = i; else break;
+    }
+    lineEls.forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+      el.classList.toggle('passed', i < idx);
+    });
+    if (idx >= 0 && Date.now() > manualScrollUntil) {
+      const el = lineEls[idx];
+      lyricsEl.scrollTo({
+        top: el.offsetTop - lyricsEl.clientHeight / 2 + el.clientHeight / 2,
+        behavior: 'smooth'
+      });
+    }
   }
 
   btn.addEventListener('click', () => {
@@ -256,16 +352,35 @@
       bar.style.width = (audio.currentTime / audio.duration * 100) + '%';
       timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
     }
+    syncLyrics();
   });
 
   audio.addEventListener('ended', () => player.classList.remove('playing'));
 
-  // 再次点击唱片可暂停/继续
+  // 再次点击唱片可暂停
   player.addEventListener('click', (e) => {
     if (!player.classList.contains('playing') || e.target === btn || btn.contains(e.target)) return;
     audio.pause();
     player.classList.remove('playing');
-    btn.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
+  });
+
+  // 进度条点击 / 拖动跳转
+  const progress = document.querySelector('.progress');
+  function seekTo(e) {
+    if (!audio.duration) return;
+    const rect = progress.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+  }
+  progress.addEventListener('pointerdown', (e) => {
+    seekTo(e);
+    const move = (ev) => seekTo(ev);
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
   });
 </script>
 
