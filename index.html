@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>夜的回响</title>
+<style>
+  :root {
+    --cream: #f5ead6;
+    --sepia: #8a6b4f;
+    --deep: #2a1f16;
+    --amber: #d9a05b;
+    --rose: #c98a7d;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Songti SC", "Noto Serif SC", "STSong", serif;
+    background: radial-gradient(ellipse at 50% 30%, #3a2c1e 0%, #241a10 55%, #150e08 100%);
+    color: var(--cream);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ---- 胶片颗粒 ---- */
+  .grain {
+    position: fixed; inset: -100px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+    opacity: .10;
+    pointer-events: none;
+    animation: grainShift .45s steps(3) infinite;
+    z-index: 5;
+  }
+  @keyframes grainShift {
+    0% { transform: translate(0, 0); }
+    33% { transform: translate(-18px, 12px); }
+    66% { transform: translate(14px, -16px); }
+    100% { transform: translate(0, 0); }
+  }
+
+  /* ---- 暗角 & 漏光 ---- */
+  .vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 4;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(10, 5, 2, .55) 100%);
+  }
+  .leak {
+    position: fixed; pointer-events: none; z-index: 3;
+    border-radius: 50%; filter: blur(70px); opacity: .35;
+    animation: leakFloat 12s ease-in-out infinite alternate;
+  }
+  .leak-a { width: 45vmax; height: 45vmax; top: -18vmax; right: -14vmax;
+            background: radial-gradient(circle, var(--amber), transparent 65%); }
+  .leak-b { width: 38vmax; height: 38vmax; bottom: -16vmax; left: -12vmax;
+            background: radial-gradient(circle, var(--rose), transparent 65%);
+            animation-delay: -6s; }
+  @keyframes leakFloat {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-4vmax, 3vmax) scale(1.12); }
+  }
+
+  /* ---- 顶部文字 ---- */
+  header { text-align: center; z-index: 6; margin-bottom: 4vh; padding: 0 24px; }
+  .over-title {
+    font-size: 12px; letter-spacing: .55em; text-indent: .55em;
+    color: var(--amber); opacity: .85; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-size: clamp(34px, 9vw, 52px); font-weight: 600;
+    letter-spacing: .18em; text-indent: .18em;
+    text-shadow: 0 2px 24px rgba(217, 160, 91, .35);
+  }
+  .subtitle {
+    margin-top: 14px; font-size: 15px; letter-spacing: .35em; text-indent: .35em;
+    color: var(--rose);
+  }
+  .divider {
+    width: 56px; height: 1px; margin: 18px auto 0;
+    background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+  }
+
+  /* ---- 唱机 ---- */
+  .player { position: relative; width: min(74vw, 330px); aspect-ratio: 1; z-index: 6; }
+  .vinyl {
+    position: absolute; inset: 0; border-radius: 50%;
+    background:
+      repeating-radial-gradient(circle at center,
+        #16110c 0px, #16110c 2px, #241c13 3px, #16110c 4px);
+    box-shadow:
+      0 0 0 1px rgba(245, 234, 214, .08),
+      0 18px 50px rgba(0, 0, 0, .65),
+      inset 0 0 60px rgba(0, 0, 0, .5);
+    animation: spin 3.2s linear infinite;
+    animation-play-state: paused;
+  }
+  .playing .vinyl { animation-play-state: running; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* 唱片高光 */
+  .vinyl::before {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 20deg,
+      transparent 0deg, rgba(245, 234, 214, .10) 18deg, transparent 42deg,
+      transparent 180deg, rgba(245, 234, 214, .07) 198deg, transparent 222deg);
+  }
+  /* 中心标签 */
+  .label {
+    position: absolute; inset: 31%; border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #e8b06a, #b4763c 70%, #8f5a2c);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: inset 0 2px 6px rgba(255, 240, 210, .35), inset 0 -3px 8px rgba(60, 30, 5, .5);
+  }
+  .label::after {
+    content: ""; position: absolute; width: 7%; aspect-ratio: 1;
+    border-radius: 50%; background: var(--deep);
+    box-shadow: 0 0 0 2px rgba(245, 234, 214, .25);
+  }
+  .label span {
+    font-size: 10px; letter-spacing: .2em; color: #4a2c12; font-weight: 700;
+    transform: translateY(-160%);
+  }
+
+  /* ---- 唱臂 ---- */
+  .tonearm {
+    position: absolute; top: -6%; right: -8%;
+    width: 46%; height: 46%;
+    transform-origin: 78% 14%;
+    transform: rotate(-24deg);
+    transition: transform 1.6s cubic-bezier(.34, 1.2, .4, 1);
+    z-index: 7; pointer-events: none;
+  }
+  .playing .tonearm { transform: rotate(6deg); }
+  .tonearm .pivot {
+    position: absolute; top: 4%; right: 12%;
+    width: 22%; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #6b563d, #332619 70%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .6);
+  }
+  .tonearm .arm {
+    position: absolute; top: 13%; right: 21.5%;
+    width: 4px; height: 82%;
+    background: linear-gradient(90deg, #d8c9a8, #8a7550);
+    border-radius: 2px;
+    transform: rotate(10deg); transform-origin: top center;
+    box-shadow: 1px 2px 6px rgba(0, 0, 0, .5);
+  }
+  .tonearm .head {
+    position: absolute; bottom: -2%; left: 2%;
+    width: 16%; height: 13%;
+    background: linear-gradient(135deg, #4a3a26, #241a0e);
+    border-radius: 3px;
+    transform: rotate(22deg);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .55);
+  }
+
+  /* ---- 播放按钮 ---- */
+  .play-btn {
+    position: absolute; inset: 0; margin: auto;
+    width: 84px; height: 84px; border-radius: 50%;
+    border: 1px solid rgba(245, 234, 214, .5);
+    background: rgba(20, 13, 7, .55);
+    backdrop-filter: blur(4px);
+    color: var(--cream); cursor: pointer; z-index: 8;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .25s ease, opacity .4s ease, background .25s ease;
+  }
+  .play-btn:hover { background: rgba(60, 40, 20, .65); transform: scale(1.06); }
+  .play-btn svg { width: 30px; height: 30px; margin-left: 4px; fill: var(--cream); }
+  .playing .play-btn { opacity: 0; pointer-events: none; transform: scale(.7); }
+
+  /* ---- 底部 ---- */
+  footer {
+    z-index: 6; margin-top: 5vh; text-align: center; padding: 0 24px;
+  }
+  .message {
+    font-size: 15px; letter-spacing: .28em; text-indent: .28em;
+    color: var(--cream); opacity: .8;
+  }
+  .progress {
+    width: min(60vw, 260px); height: 2px; margin: 20px auto 0;
+    background: rgba(245, 234, 214, .15); border-radius: 2px; overflow: hidden;
+  }
+  .progress i {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--rose), var(--amber));
+    transition: width .3s linear;
+  }
+  .time { margin-top: 10px; font-size: 11px; letter-spacing: .2em; color: var(--sepia); font-variant-numeric: tabular-nums; }
+
+  @media (max-height: 640px) {
+    header { margin-bottom: 2vh; }
+    h1 { font-size: 30px; }
+    footer { margin-top: 3vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="leak leak-a"></div>
+<div class="leak leak-b"></div>
+<div class="vignette"></div>
+<div class="grain"></div>
+
+<header>
+  <div class="over-title">A Song For You</div>
+  <h1>夜的回响</h1>
+  <div class="subtitle">生日快乐</div>
+  <div class="divider"></div>
+</header>
+
+<div class="player" id="player">
+  <div class="vinyl">
+    <div class="label"><span>SIDE A</span></div>
+  </div>
+  <div class="tonearm">
+    <div class="pivot"></div>
+    <div class="arm"></div>
+    <div class="head"></div>
+  </div>
+  <button class="play-btn" id="playBtn" aria-label="播放">
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+</div>
+
+<footer>
+  <div class="message">愿每个夜晚，都有回响</div>
+  <div class="progress"><i id="bar"></i></div>
+  <div class="time" id="time">00:00 / 03:05</div>
+</footer>
+
+<audio id="audio" src="song.m4a" preload="auto"></audio>
+
+<script>
+  const audio  = document.getElementById('audio');
+  const player = document.getElementById('player');
+  const btn    = document.getElementById('playBtn');
+  const bar    = document.getElementById('bar');
+  const timeEl = document.getElementById('time');
+
+  function fmt(s) {
+    if (!isFinite(s)) return '00:00';
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+
+  btn.addEventListener('click', () => {
+    audio.play().then(() => player.classList.add('playing')).catch(() => {});
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (audio.duration) {
+      bar.style.width = (audio.currentTime / audio.duration * 100) + '%';
+      timeEl.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration);
+    }
+  });
+
+  audio.addEventListener('ended', () => player.classList.remove('playing'));
+
+  // 再次点击唱片可暂停/继续
+  player.addEventListener('click', (e) => {
+    if (!player.classList.contains('playing') || e.target === btn || btn.contains(e.target)) return;
+    audio.pause();
+    player.classList.remove('playing');
+    btn.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
+  });
+</script>
+
+</body>
+</html>
