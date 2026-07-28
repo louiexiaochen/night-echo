@@ -193,6 +193,41 @@
     text-shadow: 0 0 18px rgba(217, 160, 91, .55);
   }
 
+  /* ---- 结尾彩蛋页 ---- */
+  .ending {
+    position: fixed; inset: 0; z-index: 20;
+    background: radial-gradient(ellipse at 50% 35%, #33261a 0%, #1c130b 60%, #0e0905 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 2s ease;
+  }
+  .ending.show { opacity: 1; pointer-events: auto; }
+  .ending-line {
+    opacity: 0; transform: translateY(16px);
+    font-size: 18px; letter-spacing: .45em; text-indent: .45em;
+    color: rgba(245, 234, 214, .85); margin: 16px 0; text-align: center;
+  }
+  .ending-line.final {
+    font-size: 30px; color: var(--rose);
+    text-shadow: 0 0 26px rgba(201, 138, 125, .6);
+  }
+  .ending.show .ending-line { animation: endLine 1.8s ease forwards; }
+  .ending.show .ending-line:nth-child(2) { animation-delay: 1.4s; }
+  .ending.show .ending-line:nth-child(3) { animation-delay: 3.4s; }
+  .ending.show .ending-line:nth-child(4) { animation-delay: 5.6s; }
+  @keyframes endLine {
+    0%   { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  }
+  .replay-btn {
+    margin-top: 7vh; padding: 10px 26px; border-radius: 999px;
+    border: 1px solid rgba(245, 234, 214, .35); background: transparent;
+    color: rgba(245, 234, 214, .65); font-size: 13px; letter-spacing: .3em; text-indent: .3em;
+    font-family: inherit; cursor: pointer;
+    opacity: 0; transition: border-color .3s, color .3s;
+  }
+  .replay-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .ending.show .replay-btn { animation: endLine 1.8s ease 7.6s forwards; }
+
   /* 回到当前句按钮 */
   .resume-btn {
     position: absolute; right: 0; bottom: 6px; z-index: 7;
@@ -285,6 +320,14 @@
     <svg viewBox="0 0 24 24"><path d="M12 4v12m0 0l-5-5m5 5l5-5M5 20h14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
     回到当前句
   </button>
+</div>
+
+<div class="ending" id="ending">
+  <div class="grain"></div>
+  <div class="ending-line">哦对了</div>
+  <div class="ending-line">最后的最后</div>
+  <div class="ending-line final">我喜欢你</div>
+  <button class="replay-btn" id="replayBtn">再听一遍</button>
 </div>
 
 <audio id="audio" src="song.m4a" preload="auto"></audio>
@@ -407,7 +450,19 @@
     syncLyrics();
   });
 
-  audio.addEventListener('ended', () => player.classList.remove('playing'));
+  const ending  = document.getElementById('ending');
+  const replayBtn = document.getElementById('replayBtn');
+
+  audio.addEventListener('ended', () => {
+    player.classList.remove('playing');
+    setTimeout(() => ending.classList.add('show'), 600);
+  });
+
+  replayBtn.addEventListener('click', () => {
+    ending.classList.remove('show');
+    audio.currentTime = 0;
+    audio.play().then(() => player.classList.add('playing')).catch(() => {});
+  });
 
   // 再次点击唱片可暂停
   player.addEventListener('click', (e) => {
